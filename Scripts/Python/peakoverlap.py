@@ -1,26 +1,48 @@
-
-# coding: utf-8
-
-# In[51]:
-
-
 import numpy as np
 import pandas as pd
 
-#Original Author: Asa Thibodeau
+#Author: Asa Thibodeau
 
-#TODO 1)code formatting, 2) better parameter names 3) Documentation/Error Messages
-
-#Simple function to add 1 from the start position.
 def convertToPositionFormatFromBED(data, startidx=1):
-    cdata = np.copy(data)
-    cdata[:,startidx] = cdata[:,startidx]+1
-    return cdata
+    """Converts BED format positions to position format.
 
-#Simple function to subtract 1 from the start position.
+    Parameters
+    ----------
+    data : array-like, shape (n_peaks, n_features)
+        A numpy array containing peak data in BED format.
+        
+    startidx : int
+        The start index of the array. Default: 1
+        
+    Returns
+    -------
+    posdata : array-like, shape (n_peaks, n_features)
+        Returns a copy of the array incrementing the start
+        position by one.
+    """
+    posdata = np.copy(data)
+    posdata[:,startidx] = posdata[:,startidx]+1
+    return posdata
+
 def convertToBEDFormatFromPosition(data, startidx=1):
-    cdata = np.copy(data)
-    cdata[:,startidx] = cdata[:,startidx]-1
+    """Converts position format positions to BED format.
+
+    Parameters
+    ----------
+    data : array-like, shape (n_peaks, n_features)
+        A numpy array containing peak data in position format.
+        
+    startidx : int
+        The start index of the array. Default: 1
+        
+    Returns
+    -------
+    beddata : array-like, shape (n_peaks, n_features)
+        Returns a copy of the array decrementing the start
+        position by one.
+    """
+    beddata = np.copy(data)
+    beddata[:,startidx] = beddata[:,startidx]-1
     return cdata
 
 
@@ -29,11 +51,31 @@ def convertToBEDFormatFromPosition(data, startidx=1):
 ###################################################################
 
 
-#Returns a dictionary by chromosome where each element in the dictionary
-#contains an array containing start positions sorted in ascending order
-#and the position of the original data element containing the start position.
-#Time complexity: O(nlogn), n=#peaks
 def getChrStartSorted(data, chridx=0, startidx=1):
+    """Returns a dictionary by chromosome where each element in
+    the dictionary contains an array containing start positions
+    sorted in ascending order and the position of the original
+    data element containing the start position. 
+    
+    Time complexity: O(nlogn), n = # of peaks
+
+    Parameters
+    ----------
+    data : array-like, shape (n_peaks, n_features)
+        A numpy array containing peak data in position format.
+
+    chridx : int
+        The chromsome index of the array. Default: 0
+
+    startidx : int
+        The start index of the array. Default: 1
+        
+    Returns
+    -------
+    rv : dict
+       A dictionary mapping each chromosome to an array:
+       [0] = start position [1] = index in original data.
+    """
     allchr = np.unique(data[:,chridx])
     rv = dict()
     for i in range(0, len(allchr)):
@@ -44,9 +86,40 @@ def getChrStartSorted(data, chridx=0, startidx=1):
     return rv
 
 
-#Returns the index of all regions that overlap the given chromosome, start, and end position.
-#Time Complexity: O(logn), n = # of elements in the region list
 def getOverlappingRegions(chrom, start, end, chrstartsorted, data, eidx=2):
+    """Returns the index of all regions that overlap the given
+    chromosome, start, and end position.
+    
+    Time Complexity: O(logn), n = # of elements in the region list
+
+    Parameters
+    ----------
+    chrom : str
+        Chromsome of the position.
+
+    start : int
+        The start position.
+
+    end : int
+        The end position
+        
+    chrstartsorted : dict
+        The chromosome start sorted dictionary of the regions
+        to identify whether the given coordinates overlap.
+    
+    data : array-like, shape (n_peaks, n_features)
+        The data corresponding to the sorted dictionary in
+        positon format.
+    
+    eidx : int
+        The end position indec within the data parameter. Default: 2
+        
+    Returns
+    -------
+    rv : tuple
+       A tuple containing the index positions of data that
+       overlap the given position.
+    """
     try:
         startsorted = chrstartsorted[chrom]
     except:
@@ -73,25 +146,95 @@ def getOverlappingRegions(chrom, start, end, chrstartsorted, data, eidx=2):
         if start <= cend and end >= cstart: #position format comparison
             rv.append(didx)
         idx = idx+1
-    return rv
+    return tuple(rv)
 
 
-#Returns a boolean vector indicating whether or not the peak in the list overlaps a consensus peak.
-#Time Complexity: O(nlogn), n = # of elements in the region list
-def getOverlapIndex(data, consensuspeaks, chridx=0, startidx=1, endidx=2, cchridx=0, cstartidx=1):
-    sortedconsensus = getChrStartSorted(consensuspeaks, cchridx, cstartidx)
+def getOverlapIndex(data, peakset, chridx=0, startidx=1, endidx=2, setchridx=0, setstartidx=1, setendidx=2):
+    """Returns a boolean vector indicating whether or not the peak
+    in the list overlaps a set of peaks.
+    
+    Time Complexity: O(nlogn), n = # of elements in the region list
+
+    Parameters
+    ----------
+    data : array-like, shape (n_peaks, n_features)
+        A numpy array containing peak data in position format.
+
+        
+    peakset : array-like, shape (n_peaks, n_features)
+        A numpy array containing peak data in position format.
+
+    
+    chridx : int
+        The chromsome index of the data parameter. Default: 0
+        
+    startidx : int
+        The start index of the data parameter. Default: 1
+        
+    endidx : int
+        The end index of the data parameter. Default: 2
+        
+    setchridx : int
+        The chromosome index of the peakset parameter. Default: 0
+    
+    setstartidx : int
+        The start index of the peakset parameter. Default: 1
+        
+    setendidx : int
+        The end index of the peakset parameter. Default: 2
+        
+    Returns
+    -------
+    rv : arraylike, shape (n_peaks,)
+       A boolean vector indicating whether the peaks in data overlap
+       with the peaks in the peakset.
+    """
+    sortedconsensus = getChrStartSorted(peakset, setchridx, setstartidx)
     rv = np.zeros(len(data), dtype=bool)
     for i in range(0, len(data)):
         curchr = data[i, chridx]
         curstart = data[i, startidx]
         curend = data[i, endidx]
-        if(len(getOverlappingRegions(curchr, curstart, curend, sortedconsensus, consensuspeaks, 2)) > 0):
+        if(len(getOverlappingRegions(curchr, curstart, curend, sortedconsensus, peakset, setendidx)) > 0):
             rv[i] = True
     return rv
 
-#Count how many peaks & in which dataset the current peak list overlaps.
-#Time Complexity: O(m*nlogn), n = # of elements in the region list, m = # of datasets
 def getOverlapCount(countdataset, datasets, chridx=0, startidx=1, endidx=2):
+    """Counts how many peaks & in which dataset the current peak
+    list overlaps over a set of peak lists.
+    
+    Time Complexity: O(m*nlogn)
+    n = # of elements in the region list
+    m = # of datasets
+
+    Parameters
+    ----------
+    countdataset : array-like, shape (n_peaks, n_features)
+        A numpy array containing peak data in position format.
+        
+    datasets : tuple
+        A tuple containing multiple peak datasets in position format.
+
+    chridx : int
+        The chromsome index of the data parameter. Default: 0
+        
+    startidx : int
+        The start index of the data parameter. Default: 1
+        
+    endidx : int
+        The end index of the data parameter. Default: 2
+        
+    Returns
+    -------
+    overlapvector : arraylike, shape (n_peaks,)
+       A vector indicating the number of datasets in datasets
+       overlapping with the corresponding peak in countdataset.
+       
+    overlapmatrix : arraylike, shape (n_peaks, n_datasets)
+       A boolean matrix indicating whether the peak countdataset
+       overlaps with a peak in the corresponding dataset. Columns
+       are ordered respective of the ordering in the dataset tuple.
+    """
     overlapvector = np.zeros(len(countdataset))
     overlapmatrix = np.zeros((len(countdataset), len(datasets)))
     for i in range(0, len(datasets)):
@@ -101,11 +244,40 @@ def getOverlapCount(countdataset, datasets, chridx=0, startidx=1, endidx=2):
     return overlapvector, overlapmatrix
 
 
-#Returns a list of consensus peaks using cascading overlap.
-#Cascading overlap requires that all samples overlap at least one
-#other sample within the region.
-#Time complexity: O(n*m^2*logm + m*nlogn) m=#of datasets, n=#peaks
 def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
+    """Returns a list of consensus peaks using cascading overlap.
+    Cascading overlap requires that all samples overlap at least
+    one other sample within the region.
+    
+    Time complexity: O(n*m^2*logm + m*nlogn) m=#of datasets, n=#peaks
+
+    Parameters
+    ----------
+    data : tuple
+        A tuple of numpy arrays containing peak data in position format.
+        
+    chridx : int
+        The chromsome index of the data parameter. Default: 0
+        
+    startidx : int
+        The start index of the data parameter. Default: 1
+        
+    endidx : int
+        The end index of the data parameter. Default: 2
+        
+    Returns
+    -------
+    rv : arraylike, shape (n_peaks,)
+       A numpy array of genomic positions corresponding to the
+       merged peak locations identified by cascading peaks across
+       multiple positions.
+    
+    Notes
+    -----
+    Chromosome start and end positions must be the same over all peak
+    datasets.
+    """
+    
     sorteddata = dict()
     for i in range(0, len(data)):
         sorteddata[i] = getChrStartSorted(data[i], chridx, startidx)
@@ -182,10 +354,38 @@ def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
     return np.array(allchrcascadingpeaks, dtype=object)
 
 
-#Gets a strict set of consensus peaks requiring that every sample overlaps
-#every other sample in the consensus peak region.
-#Time Complexity: O(m^2*n + m*nlogn) m=#of datasets, n=#peaks 
 def getStrictConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
+    """Returns a strict set of consensus peaks requiring that every
+    sample overlaps every other sample in the consensus peak region.
+    
+    Time Complexity: O(m^2*n + m*nlogn) m=#of datasets, n=#peaks
+
+    Parameters
+    ----------
+    data : tuple
+        A tuple of numpy arrays containing peak data in position format.
+        
+    chridx : int
+        The chromsome index of the data parameter. Default: 0
+        
+    startidx : int
+        The start index of the data parameter. Default: 1
+        
+    endidx : int
+        The end index of the data parameter. Default: 2
+        
+    Returns
+    -------
+    rv : arraylike, shape (n_peaks,)
+       A numpy array of genomic positions where peaks across
+       all datasets overlap.
+    
+    Notes
+    -----
+    Chromosome start and end positions must be the same over all peak
+    datasets.
+    """
+        
     sorteddata = dict()
     for i in range(0, len(data)):
         sorteddata[i] = getChrStartSorted(data[i], chridx, startidx)
@@ -243,5 +443,4 @@ def getStrictConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
             allchrstrictpeaks.append(cp)
             
     return np.array(allchrstrictpeaks, dtype=object)
-
 

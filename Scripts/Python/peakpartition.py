@@ -66,12 +66,12 @@ def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.7
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -96,12 +96,12 @@ def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.7
     trainrv = []
     for i in range(0, len(trainsamples)):
         vector,_ = po.getOverlapCount(trainsamples[i], [nulltraincascpeaks])
-        trainrv.append(trainsamples[i][vector == 0, :]) 
+        trainrv.append(np.where(vector == 0)[0])
     
     testrv = []
     for i in range(0, len(testsamples)):
         vector,_ = po.getOverlapCount(testsamples[i], [nulltestcascpeaks])
-        testrv.append(testsamples[i][vector == 0, :])     
+        testrv.append(np.where(vector == 0)[0])     
     return tuple(trainrv), tuple(testrv)
 
 
@@ -129,12 +129,12 @@ def getChromosomePortionPartition(trainsamples, testsamples, chrsizes, training=
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -152,7 +152,7 @@ def getChromosomePortionPartition(trainsamples, testsamples, chrsizes, training=
             curchr = trainsamples[i][j,0]
             if trainsamples[i][j,2] < limits[curchr]:
                 vector[j] = True
-        trainrv.append(trainsamples[i][vector, :])
+        trainrv.append(np.where(vector == True)[0])
 
     testrv = []      
     for i in range(0, len(testsamples)):
@@ -161,7 +161,7 @@ def getChromosomePortionPartition(trainsamples, testsamples, chrsizes, training=
             curchr = testsamples[i][j,0]
             if testsamples[i][j,2] >= limits[curchr]:
                 vector[j] = True
-        testrv.append(testsamples[i][vector, :]) 
+        testrv.append(np.where(vector == True)[0]) 
     return tuple(trainrv), tuple(testrv)
     
     
@@ -181,12 +181,12 @@ def getOddEvenChromosomePartition(trainsamples, testsamples):
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -204,7 +204,7 @@ def getOddEvenChromosomePartition(trainsamples, testsamples):
                     vector[j] = True
             except:
                 pass
-        trainrv.append(trainsamples[i][vector, :])
+        trainrv.append(np.where(vector == True)[0])
     
     testrv = []       
     for i in range(0, len(testsamples)):
@@ -217,10 +217,10 @@ def getOddEvenChromosomePartition(trainsamples, testsamples):
                     vector[j] = True
             except:
                 pass
-        testrv.append(testsamples[i][vector, :]) 
+        testrv.append(np.where(vector == True)[0]) 
     return tuple(trainrv), tuple(testrv)
 
-   
+
 def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, training=0.75):
     """Partitions data in train and test samples by randomly selecting peaks by
     a percentage for conensus peaks (identified using cascading approach) over each
@@ -247,12 +247,12 @@ def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, 
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -296,20 +296,19 @@ def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, 
 
     trainrv = []
     for i in range(0, len(trainsamples)):
-        trainrv.append(np.zeros((0, np.shape(trainbychrom[chrkeys[0]][0])[1]), dtype=np.object))
+        trainrv.append(np.zeros((0, 0), dtype=np.int))
         for curchr in chrkeys:
-            trainrv[i] = np.concatenate((trainrv[i], trainbychrom[curchr][i]))
+            trainrv[i] = np.append(trainrv[i], trainbychrom[curchr][i])
 
     testrv = []
     for i in range(0, len(testsamples)):
-        testrv.append(np.zeros((0, np.shape(testbychrom[chrkeys[0]][0])[1]), dtype=np.object))
+        testrv.append(np.zeros((0, 0), dtype=np.int))
         for curchr in chrkeys:
-            testrv[i] = np.concatenate((testrv[i], testbychrom[curchr][i]))
+            testrv[i] = np.append(testrv[i], testbychrom[curchr][i])
             
     return tuple(trainrv), tuple(testrv)
 
 
-#Return all locations in samplea not in sampleb for training, and vice versa for testing
 def getExclusivePartition(trainsamples, testsamples):
     """Partitions data in train and test samples by selecting peaks
     in the training/testing set that are not in the corresponding
@@ -326,12 +325,12 @@ def getExclusivePartition(trainsamples, testsamples):
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -341,12 +340,12 @@ def getExclusivePartition(trainsamples, testsamples):
     trainrv = []
     for i in range(0, len(trainsamples)):
         vector,_ = po.getOverlapCount(trainsamples[i], testsamples)
-        trainrv.append(trainsamples[i][vector == 0, :])
+        trainrv.append(np.where(vector == 0)[0])
     
     testrv = []
     for i in range(0, len(testsamples)):
         vector,_ = po.getOverlapCount(testsamples[i], trainsamples)
-        testrv.append(testsamples[i][vector == 0, :])       
+        testrv.append(np.where(vector == 0)[0])       
     return tuple(trainrv), tuple(testrv)
 
 
@@ -372,19 +371,27 @@ def getIdentityPartition(trainsamples, testsamples):
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
     Assumes that the first three columns of each data element are:
     Chromosome, Start, End
     """
-    return tuple(trainsamples), tuple(testsamples)
+    trainrv = []
+    for i in range(0, len(trainsamples)):
+        trainrv.append(np.array(range(0,len(trainsamples[i]))))
+    
+    testrv = []
+    for i in range(0, len(testsamples)):
+        testrv.append(np.array(range(0,len(testsamples[i]))))
+        
+    return tuple(trainrv), tuple(testrv)
 
 
 def getCascadingPartition(trainsamples, testsamples):
@@ -402,12 +409,12 @@ def getCascadingPartition(trainsamples, testsamples):
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -419,11 +426,11 @@ def getCascadingPartition(trainsamples, testsamples):
     
     trainrv = []
     for i in range(0, len(trainsamples)):
-        trainrv.append(trainsamples[i][po.getOverlapIndex(trainsamples[i], cascadingpeaks),:])
+        trainrv.append(np.where(po.getOverlapIndex(trainsamples[i], cascadingpeaks) == 0)[0])
     
     testrv = []
     for i in range(0, len(testsamples)):
-        testrv.append(testsamples[i][po.getOverlapIndex(testsamples[i], cascadingpeaks),:])
+        testrv.append(np.where(po.getOverlapIndex(testsamples[i], cascadingpeaks) == 0)[0])
         
     return tuple(trainrv), tuple(testrv)
 
@@ -442,12 +449,12 @@ def getStrictPartition(trainsamples, testsamples):
     Returns
     -------
     trainrv : tuple,
-        Returns a tuple containing the partitioned data for each training
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each training dataset.
 
     testrv : tuple
-        Returns a tuple containing the partitioned data for each testing
-        dataset.
+        Returns a tuple containing the partitioned data indices
+        for each testing dataset.
 
     Notes
     -----
@@ -459,10 +466,12 @@ def getStrictPartition(trainsamples, testsamples):
     
     trainrv = []
     for i in range(0, len(trainsamples)):
-        trainrv.append(trainsamples[i][po.getOverlapIndex(trainsamples[i], strictpeaks),:])
+        trainrv.append(np.where(po.getOverlapIndex(trainsamples[i], strictpeaks) == True)[0])
     
     testrv = []
     for i in range(0, len(testsamples)):
-        testrv.append(testsamples[i][po.getOverlapIndex(testsamples[i], strictpeaks),:])
+        testrv.append(np.where(po.getOverlapIndex(testsamples[i], strictpeaks) == True)[0])
         
     return tuple(trainrv), tuple(testrv)
+
+

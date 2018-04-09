@@ -98,12 +98,12 @@ def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.7
     trainrv = []
     for i in range(0, len(trainsamples)):
         vector,_ = po.getOverlapCount(trainsamples[i], [nulltraincascpeaks])
-        trainrv.append(np.where(vector == 0)[0])
+        trainrv.append(np.where(vector == False)[0])
     
     testrv = []
     for i in range(0, len(testsamples)):
         vector,_ = po.getOverlapCount(testsamples[i], [nulltestcascpeaks])
-        testrv.append(np.where(vector == 0)[0])     
+        testrv.append(np.where(vector == False)[0])     
     return tuple(trainrv), tuple(testrv)
 
 
@@ -292,22 +292,36 @@ def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, 
     testbychrom = dict()
     for curchr in chrkeys:
         trainsamplechr = []
+        trainidx = []
         for i in range(0, len(trainsamples)):
-            idx = list(sortedtrain[i][curchr][:,1])
-            trainsamplechr.append(trainsamples[i][idx,:])
+            idx = sortedtrain[i][curchr][:,1]
+            trainidx.append(idx)
+            trainsamplechr.append(trainsamples[i][list(idx),:])
 
-        testsamplechr = []            
+        testsamplechr = []    
+        testidx = []        
         for i in range(0, len(testsamples)):
-            idx = list(sortedtest[i][curchr][:,1])
-            testsamplechr.append(testsamples[i][idx,:])
+            idx = sortedtest[i][curchr][:,1]
+            testidx.append(idx)
+            testsamplechr.append(testsamples[i][list(idx),:])
+            
         rstatei = None
         if randomstate != None:
             rstatei = randomstate+i
         curtrain, curtest =  getRandomPartition(trainsamplechr, testsamplechr, randomstate=rstatei, training=training)
+        
+        correctedtrain = []
+        for i in range(0, len(curtrain)):
+            correctedtrain.append(list(trainidx[i][curtrain[i]]))
+            
+        correctedtest = []
+        for i in range(0, len(curtest)):
+            correctedtest.append(list(testidx[i][curtest[i]]))
+            
+        trainbychrom[curchr] = correctedtrain
+        testbychrom[curchr] = correctedtest
 
-        trainbychrom[curchr] = curtrain
-        testbychrom[curchr] = curtest
-
+        
     trainrv = []
     for i in range(0, len(trainsamples)):
         trainrv.append(np.zeros((0, 0), dtype=np.int))

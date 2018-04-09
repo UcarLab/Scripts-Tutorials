@@ -458,11 +458,11 @@ def getCascadingPartition(trainsamples, testsamples, randomstate=None, training=
     
     trainrv = []
     for i in range(0, len(trainsamples)):
-        trainrv.append(np.where(po.getOverlapIndex(trainsamples[i], cascadingpeaks) == 0)[0])
+        trainrv.append(np.where(po.getOverlapIndex(trainsamples[i], cascadingpeaks) == True)[0])
     
     testrv = []
     for i in range(0, len(testsamples)):
-        testrv.append(np.where(po.getOverlapIndex(testsamples[i], cascadingpeaks) == 0)[0])
+        testrv.append(np.where(po.getOverlapIndex(testsamples[i], cascadingpeaks) == True)[0])
         
     return tuple(trainrv), tuple(testrv)
 

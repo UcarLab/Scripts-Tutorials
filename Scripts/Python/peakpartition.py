@@ -34,14 +34,14 @@ def readChrSizes(filepath):
     rv : dict
         Returns a dictionary mapping chromosome to chromosome size.
     """
-    values = pd.read_csv(filepath, sep="\t").values
+    values = pd.read_csv(filepath, sep="\t", header=None).values
     rv = dict()
     for i in range(0, len(values)):
         rv[values[i,0]] = values[i,1]
     return rv
     
 
-def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.75):
+def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by randomly selecting peaks by
     a percentage for conensus peaks (identified using cascading approach) and
     combining them with the remaining peaks (those specific to training and testing)
@@ -62,6 +62,8 @@ def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.7
         The percentage used in training.  1-training will be used in
         the test set data. Values must be in the range [0,1].
         Default: 0.75
+        
+    chrsizes : Unused
 
     Returns
     -------
@@ -105,7 +107,7 @@ def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.7
     return tuple(trainrv), tuple(testrv)
 
 
-def getChromosomePortionPartition(trainsamples, testsamples, chrsizes, training=0.75):
+def getChromosomePortionPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by selecting peaks to be
     within the first fraction (specified by the training argument) to be in
     the training set and the remaining portion to be in the testing set.
@@ -120,11 +122,15 @@ def getChromosomePortionPartition(trainsamples, testsamples, chrsizes, training=
 
     chrsizes : dict
         A dictionary mapping chromsomes to their sizes.
+        
+    randomstate : unused
 
     training : float [0,1]
         The percentage of each chromosome (first half) used in training.
         1-training will be used in the test set data. Values must be in
         the range [0,1]. Default: 0.75
+        
+    chrsizes : unused
 
     Returns
     -------
@@ -165,7 +171,7 @@ def getChromosomePortionPartition(trainsamples, testsamples, chrsizes, training=
     return tuple(trainrv), tuple(testrv)
     
     
-def getOddEvenChromosomePartition(trainsamples, testsamples):
+def getOddEvenChromosomePartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by selecting odd
     chromosomes for training samples and even chromosomes for testing
     samples.
@@ -177,6 +183,12 @@ def getOddEvenChromosomePartition(trainsamples, testsamples):
 
     testsamples : tuple
         A tuple containing multiple numpy arrays for the testing set.
+        
+    randomstate : unused
+    
+    training : unused
+    
+    chrsizes : unused
 
     Returns
     -------
@@ -221,7 +233,7 @@ def getOddEvenChromosomePartition(trainsamples, testsamples):
     return tuple(trainrv), tuple(testrv)
 
 
-def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, training=0.75):
+def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by randomly selecting peaks by
     a percentage for conensus peaks (identified using cascading approach) over each
     chromosome indepedently and combining them with the remaining peaks 
@@ -243,6 +255,8 @@ def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, 
         The percentage used in training.  1-training will be used in
         the test set data. Values must be in the range [0,1].
         Default: 0.75
+        
+    chrsizes : unused
 
     Returns
     -------
@@ -309,7 +323,7 @@ def getRandomByChromosomePartition(trainsamples, testsamples, randomstate=None, 
     return tuple(trainrv), tuple(testrv)
 
 
-def getExclusivePartition(trainsamples, testsamples):
+def getExclusivePartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by selecting peaks
     in the training/testing set that are not in the corresponding
     testing/training set respectively.
@@ -321,6 +335,12 @@ def getExclusivePartition(trainsamples, testsamples):
 
     testsamples : tuple
         A tuple containing multiple numpy arrays for the testing set.
+        
+    randomstate : unused
+    
+    training : unused
+    
+    chrsizes : unused
 
     Returns
     -------
@@ -357,7 +377,7 @@ def getExclusivePartition(trainsamples, testsamples):
 ######################################################################
 
 
-def getIdentityPartition(trainsamples, testsamples):
+def getIdentityPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Doesn't partition the data at all and returns the input.
 
     Parameters
@@ -367,6 +387,12 @@ def getIdentityPartition(trainsamples, testsamples):
 
     testsamples : tuple
         A tuple containing multiple numpy arrays for the testing set.
+        
+    randomstate : unused
+    
+    training : unused
+    
+    chrsizes : unused
 
     Returns
     -------
@@ -394,7 +420,7 @@ def getIdentityPartition(trainsamples, testsamples):
     return tuple(trainrv), tuple(testrv)
 
 
-def getCascadingPartition(trainsamples, testsamples):
+def getCascadingPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by selecting peaks
     overlapping cascading consensus peaks among the union of samples.
 
@@ -405,6 +431,12 @@ def getCascadingPartition(trainsamples, testsamples):
 
     testsamples : tuple
         A tuple containing multiple numpy arrays for the testing set.
+        
+    randomstate : unused
+    
+    training : unused
+    
+    chrsizes : unused
 
     Returns
     -------
@@ -434,7 +466,7 @@ def getCascadingPartition(trainsamples, testsamples):
         
     return tuple(trainrv), tuple(testrv)
 
-def getStrictPartition(trainsamples, testsamples):
+def getStrictPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
     """Partitions data in train and test samples by selecting peaks
     overlapping strict consensus peaks among the union of samples.
 
@@ -445,6 +477,12 @@ def getStrictPartition(trainsamples, testsamples):
 
     testsamples : tuple
         A tuple containing multiple numpy arrays for the testing set.
+        
+    randomstate : unused
+    
+    training : unused
+    
+    chrsizes : unused
 
     Returns
     -------

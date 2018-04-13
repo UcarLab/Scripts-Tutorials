@@ -512,9 +512,9 @@ def getAnnotationConfusionMatrix(data1, sorted1, data2, sorted2,
     ua2l = len(ua2)
     m = np.zeros((ua1l+1, ua2l+1), dtype=np.int64)
     rowlabels = list(ua1)
-    rowlabels.append("Unannotated")
+    rowlabels.append("NA")
     collabels = list(ua2)
-    collabels.append("Unannotated")
+    collabels.append("NA")
     
     for curchr in chromosomes:
         if curchr in sorted1 and curchr in sorted2:
@@ -528,28 +528,45 @@ def getAnnotationConfusionMatrix(data1, sorted1, data2, sorted2,
                 s1 = cursort1[i1,start1idx]
                 e1 = cursort1[i1,end1idx]
                 rowidx = np.where(ua1 == cursort1[i1,ann1idx])
-                
+
                 s2 = cursort2[i2,start2idx]
                 e2 = cursort2[i2,end2idx]
                 colidx = np.where(ua2 == cursort2[i2,ann2idx])
-                
-                maxstart = max(s1,s2)
-                minend = min(e1,e2)
-                
-                prefix = maxstart-curpos
-                if s1 < s2:
-                    m[rowidx,ua2l] = m[rowidx,ua2l]+prefix
-                elif s2 < s1:
-                    m[ua1l,colidx] = m[ua1l,colidx]+prefix
+                if s1 <= e2 and s2 <= e1:
 
-                overlap = minend-maxstart+1
-                m[rowidx,colidx] = m[rowidx,colidx]+overlap
-                
-                if e1 == minend:
-                    i1 = i1+1
-                if e2 == minend:
-                    i2 = i2+1
-                curpos = minend+1
+
+                    maxstart = max(s1,s2)
+                    minend = min(e1,e2)
+
+                    prefix = maxstart-curpos
+
+                    if s1 < s2:
+                        m[rowidx,ua2l] = m[rowidx,ua2l]+prefix
+                    elif s2 < s1:
+                        m[ua1l,colidx] = m[ua1l,colidx]+prefix
+
+                    overlap = minend-maxstart+1
+                    m[rowidx,colidx] = m[rowidx,colidx]+overlap
+
+                    if(overlap < 0):
+                        print str(s1)+":"+str(e1)+" "+str(s2)+":"+str(e2)
+
+                    if e1 == minend:
+                        i1 = i1+1
+                    if e2 == minend:
+                        i2 = i2+1
+                    curpos = minend+1
+                else:
+                    if s2 > e1:
+                        overlap = e1-s1+1
+                        m[rowidx,ua2l] = m[rowidx,ua2l]+overlap
+                        curpos = e1+1
+                        i1 = i1+1
+                    else:
+                        overlap = e2-s2+1
+                        m[ua1l,colidx] = m[ua1l,colidx]+overlap
+                        curpos = e2+1
+                        i2 = i2+1
                 
             if e1 > minend:
                 suffix = e1-curpos+1

@@ -444,7 +444,8 @@ def getStrictConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
             
     return np.array(allchrstrictpeaks, dtype=object)
 
-
+#TODO Fix an issue where this method loops forever if an annotation
+#is empty/None
 def getAnnotationConfusionMatrix(data1, sorted1, data2, sorted2, 
                                  chr1idx=0, start1idx=1, end1idx=2, ann1idx=3,
                                  chr2idx=0, start2idx=1, end2idx=2, ann2idx=3):
@@ -611,9 +612,8 @@ def getAnnotationConfusionMatrix(data1, sorted1, data2, sorted2,
     return m, rowlabels, collabels
 
 def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endidx=2, annidx=3):
-    """Returns a consensus annotation file where each region is
-       annotated iff all datasets agree with the same annotation
-       according to the rules provided.
+    """Returns a confusion matrix of annotations between two sets of
+        peaks at the base pair level.
     
     Time Complexity: O(n*m) n=#peaks, m=#of datasets
 
@@ -649,7 +649,7 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
     -------
     rv : list
        A list of chromosome positions with consensus annotations
-       according to the rules provided. Output is in position format.
+       according to the rules provided.
     
     """
     
@@ -671,6 +671,7 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
         for currule in rules:
             newann = currule[0]
             rulesets = currule[1]
+
             #Check to make sure that each set matches
             #the current annotation for the set at
             #at least onces in the current rule set
@@ -717,8 +718,9 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
                     curend = cursort[i][counts[i],endidx]
                     if curpos < curstart:
                         nextpos = min(nextpos, curstart)
-                    if curpos < curend:
+                    if curpos <= curend:
                         nextpos = min(nextpos, curend)
+                
                 nextpos = int(nextpos)
                 
                 newann = checkrules(curann, rules)
@@ -734,15 +736,16 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
                         curann[i] = cursort[i][counts[i],annidx]
 
                 curpos = nextposstart
-                
-        curregion = chrrv[0]
-        for i in range(1, len(chrrv)):
-            nextregion = chrrv[i]
-            if(nextregion[3] != curregion[3] or curregion[2]+1 != nextregion[1]):
-                rv.append(curregion)
-                curregion = nextregion
-            else:
-                curregion[2] = nextregion[2]
-        rv.append(curregion)
+        
+        if(len(chrrv) > 0):
+            curregion = chrrv[0]
+            for i in range(1, len(chrrv)):
+                nextregion = chrrv[i]
+                if(nextregion[3] != curregion[3] or curregion[2]+1 != nextregion[1]):
+                    rv.append(curregion)
+                    curregion = nextregion
+                else:
+                    curregion[2] = nextregion[2]
+            rv.append(curregion)
         
     return rv

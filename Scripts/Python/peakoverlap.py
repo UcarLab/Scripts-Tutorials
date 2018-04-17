@@ -43,7 +43,7 @@ def convertToBEDFormatFromPosition(data, startidx=1):
     """
     beddata = np.copy(data)
     beddata[:,startidx] = beddata[:,startidx]-1
-    return cdata
+    return beddata
 
 
 ###################################################################
@@ -671,7 +671,6 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
         for currule in rules:
             newann = currule[0]
             rulesets = currule[1]
-            #print(newann)
             #Check to make sure that each set matches
             #the current annotation for the set at
             #at least onces in the current rule set

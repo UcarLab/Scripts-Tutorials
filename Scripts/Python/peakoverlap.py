@@ -456,13 +456,13 @@ def getAnnotationConfusionMatrix(data1, sorted1, data2, sorted2,
     Parameters
     ----------
     data1 : array-like
-       Numpy array containing the peak data with annotations.
+        Numpy array containing the peak data with annotations.
         
     sorted1 : dict
         Sort information for data1.
         
     data2 : array-like
-       Numpy array containing the peak data with annotations.
+        Numpy array containing the peak data with annotations.
         
     sorted2 : dict
         Sort information for data2.
@@ -609,3 +609,141 @@ def getAnnotationConfusionMatrix(data1, sorted1, data2, sorted2,
                     m[rowidx, colidx] = m[rowidx, colidx]+pl
                     
     return m, rowlabels, collabels
+
+def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endidx=2, annidx=3):
+    """Returns a consensus annotation file where each region is
+       annotated iff all datasets agree with the same annotation
+       according to the rules provided.
+    
+    Time Complexity: O(n*m) n=#peaks, m=#of datasets
+
+    Parameters
+    ----------
+    data : tuple
+        Numpy array containing the peak data with annotations.
+        
+    sorted : tuple
+        Sort information for each data element in data.
+        
+    rules : list
+        Sets of annotations to merge.   Each element represents
+        the new label while the value holds tuples of labels to
+        merge for each dataset. AND operations are used. 
+        Priority is given in order of rules provided.
+        
+        Example: rules = [["Newlabel",((d1label1,), (d2label1, d2label2))]]
+        
+    chridx : int
+        The chromsome index of the data1 parameter. Default: 0    
+        
+    startidx : int
+        The start index of the data1 parameter. Default: 1
+        
+    endidx : int
+        The end index of the data1 parameter. Default: 2
+        
+    annidx : int
+        The annotation index of the data1 parameter. Default: 3
+        
+    Returns
+    -------
+    rv : list
+       A list of chromosome positions with consensus annotations
+       according to the rules provided. Output is in position format.
+    
+    """
+    
+    chromosomes = np.union1d(sorteddata[0].keys(),sorteddata[0].keys())
+    
+    def checkchr(curchr, allsorted):
+        for cursort in allsorted:
+            if(curchr not in cursort):
+                return False
+        return True
+    
+    def checklimit(c, d):
+        for i in range(0, len(c)):
+            if(c[i] >= len(d[i])):
+                return False
+        return True
+
+    def checkrules(curann, rules):
+        for currule in rules:
+            newann = currule[0]
+            rulesets = currule[1]
+            #print(newann)
+            #Check to make sure that each set matches
+            #the current annotation for the set at
+            #at least onces in the current rule set
+            inall = True
+            for i in range(0, len(rulesets)):
+                inset = False
+                for j in range(0, len(rulesets[i])):
+                    if rulesets[i][j] == curann[i]:
+                        inset = True
+                        break
+                if not inset:
+                    inall = False
+                    break
+            if inall:
+                return newann
+        return None
+    
+    rv = []
+    for curchr in chromosomes:
+        chrrv = []
+        if checkchr(curchr, sorteddata):
+            
+            cursort = []
+            for i in range(0, len(data)):
+                cursort.append(data[i][list(sorteddata[i][curchr][:,1]),:])
+            
+            counts = [0]*len(data)
+            curann = [None]*len(data)
+            curpos = cursort[0][0,startidx]
+            for i in range(1, len(data)):
+                curpos = min(cursort[i][0,startidx], curpos)
+            
+            for i in range(0, len(data)):
+                if curpos == cursort[i][0,startidx]:
+                    curann[i] = cursort[i][0,annidx]
+            
+            if(curpos > 1):
+                chrrv.append([curchr, 1, curpos-1, None])
+                
+            while(checklimit(counts, cursort)):
+                nextpos = float('inf')
+                for i in range(0, len(cursort)):
+                    curstart = cursort[i][counts[i],startidx]-1
+                    curend = cursort[i][counts[i],endidx]
+                    if curpos < curstart:
+                        nextpos = min(nextpos, curstart)
+                    if curpos < curend:
+                        nextpos = min(nextpos, curend)
+                nextpos = int(nextpos)
+                
+                newann = checkrules(curann, rules)
+                chrrv.append([curchr, curpos, nextpos, newann])
+                
+                for i in range(0, len(data)):
+                    if nextpos == cursort[i][counts[i],endidx]:
+                        counts[i] = counts[i]+1
+                
+                nextposstart = nextpos+1
+                for i in range(0, len(data)):
+                    if counts[i] < len(cursort[i]) and nextposstart == cursort[i][counts[i],startidx]:
+                        curann[i] = cursort[i][counts[i],annidx]
+
+                curpos = nextposstart
+                
+        curregion = chrrv[0]
+        for i in range(1, len(chrrv)):
+            nextregion = chrrv[i]
+            if(nextregion[3] != curregion[3] or curregion[2]+1 != nextregion[1]):
+                rv.append(curregion)
+                curregion = nextregion
+            else:
+                curregion[2] = nextregion[2]
+        rv.append(curregion)
+        
+    return rv

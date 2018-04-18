@@ -615,7 +615,7 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
     """Returns a confusion matrix of annotations between two sets of
         peaks at the base pair level.
     
-    Time Complexity: O(n*m) n=#peaks, m=#of datasets
+    Time Complexity: O(n*m^2) n=#peaks, m=#of datasets
 
     Parameters
     ----------
@@ -667,6 +667,12 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
                 return False
         return True
 
+    def checkoverlap(start, end, c, d):
+        for i in range(0, len(c)):
+            if start > d[i][c[i],endidx] or d[i][c[i],startidx] > end:
+                return False
+        return True
+    
     def checkrules(curann, rules):
         for currule in rules:
             newann = currule[0]
@@ -723,8 +729,9 @@ def getConsensusAnnotations(data, sorteddata, rules, chridx=0, startidx=1, endid
                 
                 nextpos = int(nextpos)
                 
-                newann = checkrules(curann, rules)
-                chrrv.append([curchr, curpos, nextpos, newann])
+                if checkoverlap(curpos, nextpos, counts, cursort):
+                    newann = checkrules(curann, rules)
+                    chrrv.append([curchr, curpos, nextpos, newann])
                 
                 for i in range(0, len(data)):
                     if nextpos == cursort[i][counts[i],endidx]:

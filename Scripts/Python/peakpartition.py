@@ -82,7 +82,7 @@ def getRandomPartition(trainsamples, testsamples, randomstate=None, training=0.7
     """
     #use cascading peaks, identify them, select 75%, then add remaining from train/test samples
     allsamples = trainsamples+testsamples
-    cascadingpeaks = po.getCascadingConsensusPeaks(allsamples)
+    cascadingpeaks = po.getCascadingConsensusPeaks(allsamples, minoverlap=1)
     numcasc = len(cascadingpeaks)
     numtraining = int(np.floor(training*numcasc))
     

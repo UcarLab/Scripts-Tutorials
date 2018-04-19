@@ -244,7 +244,7 @@ def getOverlapCount(countdataset, datasets, chridx=0, startidx=1, endidx=2):
     return overlapvector, overlapmatrix
 
 
-def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
+def getCascadingConsensusPeaks(data, minoverlap=None, chridx=0, startidx=1, endidx=2):
     """Returns a list of consensus peaks using cascading overlap.
     Cascading overlap requires that all samples overlap at least
     one other sample within the region.
@@ -255,6 +255,10 @@ def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
     ----------
     data : tuple
         A tuple of numpy arrays containing peak data in position format.
+        
+    minoverlap : int or None (Default)
+        Sets the minimum number of peaks that need to overlap to call
+        a consensus peak.
         
     chridx : int
         The chromsome index of the data parameter. Default: 0
@@ -277,6 +281,8 @@ def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
     Chromosome start and end positions must be the same over all peak
     datasets.
     """
+    if minoverlap is None:
+        minoverlap = len(data)
     
     sorteddata = dict()
     for i in range(0, len(data)):
@@ -307,7 +313,6 @@ def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
             cascadeend = curlist[curindex,endidx]
             seenlist = [curindex]
 
-            overlap = True
             for i in range(1, len(order)):
                 curindex = order[i]
                 curstart = curlist[curindex,startidx]
@@ -315,16 +320,15 @@ def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
 
                 if curstart <= cascadeend: #position format comparison
                     cascadeend = max(curend, cascadeend)
-                    seenlist.append(curindex)   
+                    seenlist.append(curindex) 
                 else:
-                    overlap = False
                     break
 
             #check previous cascading peak
             if len(cascadingpeaks) > 0 and cascadingpeaks[-1][2] >= cascadestart: #position format comparison
                 cascadingpeaks[-1][2] = max(cascadeend, cascadingpeaks[-1][2])
             else:
-                if overlap:
+                if len(seenlist) > minoverlap:
                     cascadingpeaks.append([curchr, cascadestart, cascadeend])
 
             #update counters
@@ -339,14 +343,15 @@ def getCascadingConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
 
             if maxreached:
                 #extend final cascading peak from remaining
-                for i in range(0, len(counters)):
-                    if(counters[i] < len(sorteddata[i][curchr])):
-                        curstart = sorteddata[i][curchr][counters[i],0]
-                        curidx = sorteddata[i][curchr][counters[i],1]
-                        if(curstart <= cascadingpeaks[-1][2]): #position format comparison
-                            cascadingpeaks[-1][2] = max(data[i][curidx,endidx], cascadingpeaks[-1][2])
-                        else:
-                            break
+                if len(cascadingpeaks) > 0:
+                    for i in range(0, len(counters)):
+                        if(counters[i] < len(sorteddata[i][curchr])):
+                            curstart = sorteddata[i][curchr][counters[i],0]
+                            curidx = sorteddata[i][curchr][counters[i],1]
+                            if(curstart <= cascadingpeaks[-1][2]): #position format comparison
+                                cascadingpeaks[-1][2] = max(data[i][curidx,endidx], cascadingpeaks[-1][2])
+                            else:
+                                break
                 break
         for cp in cascadingpeaks:
             allchrcascadingpeaks.append(cp)

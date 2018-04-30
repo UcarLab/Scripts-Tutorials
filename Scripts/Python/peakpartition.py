@@ -434,7 +434,7 @@ def getIdentityPartition(trainsamples, testsamples, randomstate=None, training=0
     return tuple(trainrv), tuple(testrv)
 
 
-def getCascadingPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None):
+def getCascadingPartition(trainsamples, testsamples, randomstate=None, training=0.75, chrsizes=None, minoverlap=None):
     """Partitions data in train and test samples by selecting peaks
     overlapping cascading consensus peaks among the union of samples.
 
@@ -468,7 +468,7 @@ def getCascadingPartition(trainsamples, testsamples, randomstate=None, training=
     Chromosome, Start, End
     """
     allsamples = trainsamples+testsamples
-    cascadingpeaks = po.getCascadingConsensusPeaks(allsamples)
+    cascadingpeaks = po.getCascadingConsensusPeaks(allsamples, minoverlap=minoverlap)
     
     trainrv = []
     for i in range(0, len(trainsamples)):

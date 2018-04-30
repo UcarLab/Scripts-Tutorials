@@ -282,7 +282,7 @@ def getCascadingConsensusPeaks(data, minoverlap=None, chridx=0, startidx=1, endi
     datasets.
     """
     if minoverlap is None:
-        minoverlap = len(data)
+        minoverlap = len(data)-1
     
     sorteddata = dict()
     for i in range(0, len(data)):
@@ -412,7 +412,6 @@ def getStrictConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
                 curlist.append(curdata[curindex,:])
             curlist = np.array(curlist)
             
-            #TODO get min and max positions
             minendidx = 0
             minend = curlist[0, endidx]
             maxstartidx = 0

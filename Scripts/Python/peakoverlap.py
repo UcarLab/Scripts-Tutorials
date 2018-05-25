@@ -287,75 +287,79 @@ def getCascadingConsensusPeaks(data, minoverlap=None, chridx=0, startidx=1, endi
     sorteddata = dict()
     for i in range(0, len(data)):
         sorteddata[i] = getChrStartSorted(data[i], chridx, startidx)
-
+    
     chromosomes = sorteddata[0].keys()
     for i in range(1, len(data)):
         chromosomes = np.union1d(chromosomes, sorteddata[i].keys())
-
+    
     allchrcascadingpeaks = []
     for curchr in chromosomes:
         counters = np.zeros(len(data), dtype=np.int32)
         cascadingpeaks = []
-
+        
         while True:
             curlist = []
+            counterindex = []
             for i in range(0, len(data)):
                 curdata = data[i]
-                curindex = sorteddata[i][curchr][counters[i],1]
-                curlist.append(curdata[curindex,:])
+                if sorteddata[i].has_key(curchr) and counters[i] < len(sorteddata[i][curchr]):
+                    curindex = sorteddata[i][curchr][counters[i],1]
+                    curlist.append(curdata[curindex,:])
+                    counterindex.append(i)
             curlist = np.array(curlist)
             slist = getChrStartSorted(curlist, chridx, startidx)
-
+            
             order = slist[curchr][:,1]
 
             curindex = order[0]
             cascadestart = curlist[curindex,startidx]
             cascadeend = curlist[curindex,endidx]
             seenlist = [curindex]
-
+            
             for i in range(1, len(order)):
                 curindex = order[i]
                 curstart = curlist[curindex,startidx]
                 curend = curlist[curindex,endidx]
-
+                
                 if curstart <= cascadeend: #position format comparison
                     cascadeend = max(curend, cascadeend)
-                    seenlist.append(curindex) 
+                    seenlist.append(curindex)
                 else:
                     break
-
+            
             #check previous cascading peak
             if len(cascadingpeaks) > 0 and cascadingpeaks[-1][2] >= cascadestart: #position format comparison
                 cascadingpeaks[-1][2] = max(cascadeend, cascadingpeaks[-1][2])
             else:
                 if len(seenlist) > minoverlap:
                     cascadingpeaks.append([curchr, cascadestart, cascadeend])
-
+            
             #update counters
             for i in seenlist:
-                counters[i] = counters[i]+1
-
+                counters[counterindex[i]] = counters[counterindex[i]]+1
             maxreached = False
+            maxcount = 0
             for i in range(0, len(counters)):
-                if(counters[i] >= len(sorteddata[i][curchr])):
-                    maxreached = True
-                    break;
+                if sorteddata[i].has_key(curchr) == False or counters[i] >= len(sorteddata[i][curchr]):
+                    maxcount += 1
 
+            if (len(data) - maxcount) <= minoverlap:
+                maxreached = True
+            
             if maxreached:
                 #extend final cascading peak from remaining
                 if len(cascadingpeaks) > 0:
                     for i in range(0, len(counters)):
-                        if(counters[i] < len(sorteddata[i][curchr])):
+                        if(sorteddata[i].has_key(curchr) and counters[i] < len(sorteddata[i][curchr])):
                             curstart = sorteddata[i][curchr][counters[i],0]
                             curidx = sorteddata[i][curchr][counters[i],1]
                             if(curstart <= cascadingpeaks[-1][2]): #position format comparison
                                 cascadingpeaks[-1][2] = max(data[i][curidx,endidx], cascadingpeaks[-1][2])
-                            else:
-                                break
+
                 break
         for cp in cascadingpeaks:
             allchrcascadingpeaks.append(cp)
-            
+    
     return np.array(allchrcascadingpeaks, dtype=object)
 
 

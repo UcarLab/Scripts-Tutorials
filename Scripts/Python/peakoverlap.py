@@ -139,7 +139,7 @@ def getOverlappingRegions(chrom, start, end, chrstartsorted, data, eidx=2):
     #scan until starts are greater than end
     rv = []
     idx = s
-    while idx < len(startsorted) and end > startsorted[idx,0]:
+    while idx < len(startsorted) and end >= startsorted[idx,0]:
         didx = startsorted[idx,1]
         cstart = startsorted[idx,0]
         cend = data[didx,eidx]

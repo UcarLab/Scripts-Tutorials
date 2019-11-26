@@ -340,7 +340,7 @@ def getStrictConsensusPeaks(data, chridx=0, startidx=1, endidx=2):
 
 def getUnionPeaks(datasets, chridx=0, startidx=1, endidx=2):
     combineddata = np.concatenate(datasets)
-    sortedlocations = po.getChrStartSorted(combineddata)
+    sortedlocations = getChrStartSorted(combineddata)
     rv = []
     for curchr in sortedlocations:
         locations = sortedlocations[curchr]
